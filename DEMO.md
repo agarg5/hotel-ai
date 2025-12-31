@@ -24,6 +24,22 @@ Let's say you want to book a room. You might provide a request like this:
 
 > "I'd like to book a room for John Smith for three nights, checking in on March 1st. My email is john.smith@example.com."
 
+### Multilingual Examples:
+
+The agent leverages advanced natural language processing to understand booking requests in various languages. Here are some examples:
+
+*   **Spanish:**
+    *   *Request:* "Quisiera reservar una habitación para dos noches, entrando el 15 de abril." (I would like to book a room for two nights, checking in on April 15th.)
+    *   *Expected understanding:* Check-in: April 15th, Duration: 2 nights.
+
+*   **French:**
+    *   *Request:* "Je voudrais réserver une chambre du 1er au 7 juin." (I would like to book a room from June 1st to June 7th.)
+    *   *Expected understanding:* Check-in: June 1st, Check-out: June 7th.
+
+*   **German:**
+    *   *Request:* "Ich brauche ein Zimmer für fünf Nächte ab dem 10. Juli." (I need a room for five nights starting July 10th.)
+    *   *Expected understanding:* Check-in: July 10th, Duration: 5 nights.
+
 ### What happens next?
 
 The agent will read your request, figure out the dates (March 1st for three nights means checking out on March 4th), check for an available room, and then confirm your booking or offer alternatives.
