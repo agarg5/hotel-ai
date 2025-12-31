@@ -214,6 +214,54 @@ The hotel property management system (PMS) market is valued at $1.43 billion (20
 
 ---
 
+## 8. Pricing Models for Competitors and Proposed Pricing
+
+### 8.1 Competitor Pricing (Illustrative)
+
+Based on market research, most comprehensive PMS and AI booking agent solutions typically employ one or a combination of the following pricing strategies:
+
+*   **Subscription-based (Tiered):** Most common model. Prices vary significantly based on features, number of rooms, and usage limits.
+    *   **Entry-level (basic features, small properties):** ~$50 - $150 per month.
+    *   **Mid-tier (advanced features, more rooms):** ~$150 - $400+ per month.
+    *   **Enterprise (full suite, custom integrations):** $400 - $1000+ per month, or custom quotes.
+*   **Commission-based:** A percentage of each booking made through their system (e.g., 1-5% per booking), often in addition to a lower subscription fee.
+*   **Per-Transaction/Per-Message:** Less common for full PMS, but some AI chatbot services might charge per conversation or per booking confirmation.
+*   **Setup Fees:** One-time fees for onboarding, training, and initial integration, ranging from $100 to $1000+.
+
+Examples of assumed pricing for leading systems:
+
+*   **Cloudbeds/Mews (Full PMS):** Likely mid-tier to enterprise subscription, potentially with commission on certain bookings. Estimated $150 - $700+ per month depending on property size and modules.
+*   **RhinoAgents/Asksuite (AI Booking Agents):** Could be tiered subscription based on message volume or number of bookings, possibly with a small setup fee. Estimated $75 - $300 per month.
+*   **TourConnect AI (Draft Automation):** Likely a tiered subscription based on booking volume processed or number of users. Estimated $100 - $400 per month.
+
+### 8.2 Proposed Pricing for Our Project
+
+Given our project's focus on small, owner-operated hotels and its unique "human-in-the-loop" draft approval workflow, a tiered subscription model would be most appropriate, emphasizing affordability and value.
+
+*   **Free Tier (Trial/Very Small Properties):**
+    *   **Features:** Basic AI request parsing, availability checks, draft booking generation (limited monthly drafts, e.g., 10-20).
+    *   **Target:** Owners testing the system, very low booking volume properties.
+    *   **Price:** Free.
+*   **Standard Tier (Most Small Properties):**
+    *   **Features:** Unlimited AI request parsing, advanced availability (split-stay suggestions), policy application, unlimited draft bookings, email integration for owner approval.
+    *   **Target:** Typical 10-30 room owner-operated hotels.
+    *   **Price:** $49 - $99 per month.
+*   **Premium Tier (Enhanced Support/Features):**
+    *   **Features:** All Standard features, priority support, custom policy integration, potentially integration with a basic channel manager (future roadmap).
+    *   **Target:** Owners needing more hands-on support or specific customizations.
+    *   **Price:** $99 - $149 per month.
+
+**Key Pricing Differentiators:**
+
+1.  **Affordability:** Positioned significantly below full-suite PMS solutions, making it accessible for small businesses.
+2.  **Value for "Human-in-the-Loop":** The pricing reflects the AI as an *assistant* that saves time, not a fully automated (and thus potentially more expensive and risky) replacement.
+3.  **No Commission:** Emphasize that we do not take a percentage of bookings, aligning with an owner's desire to maximize revenue.
+4.  **Simplicity:** Clear, predictable monthly costs without complex transaction fees.
+
+This pricing strategy aims to capture the underserved market segment by offering a tailored, cost-effective solution that directly addresses the unique needs and concerns of small, owner-operated hotels.
+
+---
+
 ## Sources
 
 ### Property Management Systems
