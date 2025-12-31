@@ -2,6 +2,8 @@
 
 This project implements a simulated AI hotel booking agent designed to process booking requests, check room availability, suggest split stays, and apply hotel policies. It leverages the OpenAI API for natural language understanding to parse booking requests from various sources like email or messaging platforms.
 
+**Note:** See [market_research_summary.md](market_research_summary.md) for competitive analysis and market positioning research.
+
 ## Project Overview
 
 The core of the project is `booking_agent.py`, which orchestrates the booking process. It interacts with:
@@ -10,7 +12,7 @@ The core of the project is `booking_agent.py`, which orchestrates the booking pr
 -   OpenAI API: Used for advanced natural language processing to understand diverse date formats and languages in booking requests.
 
 Key features include:
--   **Booking Data Management:** `bookings.csv` stores reservation details, and `bookings_calendar_view.csv` provides a visual, calendar-like overview of room occupancy.
+-   **Booking Data Management:** `bookings.csv` serves as the source of truth for all reservations and is automatically updated by the system when bookings are confirmed. The `bookings_calendar_view.csv` provides a visual, calendar-like overview of room occupancy.
 -   **Flexible Room Numbering:** Rooms are numbered 1 through 25 for simplicity.
 -   **Split-Stay Suggestions:** If a single room isn't available for the entire duration of a request, the agent attempts to find a solution by suggesting a room change during the stay.
 -   **Multilingual Natural Language Understanding:** Utilizes the OpenAI API to extract check-in and check-out dates from free-form text requests, supporting multiple languages and relative date expressions.

@@ -77,6 +77,9 @@ python3 booking_agent.py
 
 This will execute several predefined test cases demonstrating its functionality.
 
+## Demos
+For a non-technical demonstration of how the AI Hotel Booking Agent can be used and what to expect, please refer to the [DEMO.md](DEMO.md) file.
+
 ## Development Conventions
 
 -   **Language:** Python 3.x
