@@ -1,0 +1,6 @@
+- For stays of 7 nights or longer, a 10% discount is applied to the total booking cost.
+- For stays of 30 nights or longer, a 20% discount is applied to the total booking cost.
+- Overbooking is not allowed.
+- Pets are not allowed.
+- Check-in time is 3:00 PM.
+- Check-out time is 11:00 AM.
