@@ -1,6 +1,7 @@
 import csv
 import random
 from datetime import date, timedelta
+from booking_agent import get_room_details
 
 def generate_bookings():
     """Generates a CSV file with simulated hotel bookings."""
@@ -15,13 +16,13 @@ def generate_bookings():
         "language",
     ]
     
-    NUM_ROOMS = 25
-    ROOM_NUMBERS = [1 + i for i in range(NUM_ROOMS)]
+    room_details = get_room_details()
+    ALL_ROOM_NUMBERS = list(room_details.keys())
     
     START_DATE = date(2026, 1, 1)
     END_DATE = date(2026, 1, 31)
     
-    NUM_BOOKINGS = 65
+    NUM_BOOKINGS = 65 # Still generate a fixed number of bookings, but distribute among available rooms
     
     GUEST_NAMES = [
         "John Smith", "Maria Garcia", "Wei Li", "Fatima Al-Fassi", 
@@ -37,14 +38,14 @@ def generate_bookings():
     booking_id_counter = 1
     
     # Keep track of booked dates for each room
-    room_availability = {room: [] for room in ROOM_NUMBERS}
+    room_availability = {room: [] for room in ALL_ROOM_NUMBERS}
 
     for _ in range(NUM_BOOKINGS):
         stay_duration = random.randint(1, 5)
         
         # Try to find an available room for a random date
         for _ in range(100): # Max 100 tries to find a slot
-            room = random.choice(ROOM_NUMBERS)
+            room = random.choice(ALL_ROOM_NUMBERS)
             
             check_in_offset = random.randint(0, (END_DATE - START_DATE).days - stay_duration)
             check_in = START_DATE + timedelta(days=check_in_offset)

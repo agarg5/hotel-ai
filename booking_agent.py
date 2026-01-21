@@ -29,10 +29,12 @@ def llm_parse_booking_request(text, today=date(2026, 1, 5)):
     prompt_template = """
 You are an expert booking assistant. Your task is to extract booking information from a user's request.
 The current date is {today}.
-Analyze the following user request and provide the check-in date and check-out date in a strict JSON format.
+Analyze the following user request and provide the check-in date, check-out date, and number of guests in a strict JSON format.
 
-The JSON output must have two keys: "check_in_date" and "check_out_date", with dates in "YYYY-MM-DD" format.
-If you cannot determine the dates from the text, return a JSON object with null values for both keys.
+The JSON output must have three keys: "check_in_date", "check_out_date", and "num_guests".
+- "check_in_date" and "check_out_date" should be in "YYYY-MM-DD" format.
+- "num_guests" should be an integer. If not specified, default to 1.
+If you cannot determine the dates from the text, return a JSON object with null values for "check_in_date" and "check_out_date", and 1 for "num_guests".
 
 User Request:
 ---
@@ -43,7 +45,7 @@ JSON Output:
 """
     prompt = prompt_template.format(today=today.strftime('%Y-%m-%d'), request=text)
 
-    print("[INFO] Calling OpenAI API to parse dates...")
+    print("[INFO] Calling OpenAI API to parse dates and number of guests...")
     try:
         response = client.chat.completions.create(
             model="gpt-3.5-turbo",
@@ -64,12 +66,14 @@ JSON Output:
         date_data = json.loads(response_text)
         check_in_str = date_data.get("check_in_date")
         check_out_str = date_data.get("check_out_date")
+        num_guests = date_data.get("num_guests", 1) # Default to 1 guest
 
         if check_in_str and check_out_str:
             return {
                 "guest_name": guest_name,
                 "check_in_date": date.fromisoformat(check_in_str),
-                "check_out_date": date.fromisoformat(check_out_str)
+                "check_out_date": date.fromisoformat(check_out_str),
+                "num_guests": num_guests
             }
         else:
             return None
@@ -91,6 +95,37 @@ def parse_policies(policy_file="hotel_policy.txt"):
         pass
     return sorted(discount_rules, key=lambda x: x["nights"], reverse=True)
 
+def calculate_price(room_details, rooms, check_in, check_out, policies):
+    total_price = 0
+    stay_duration = (check_out - check_in).days
+
+    if not rooms:
+        return 0
+
+    if isinstance(rooms[0], dict): # This is a split stay option with list of dictionaries
+        for segment in rooms:
+            room_number = segment['room']
+            segment_check_in = segment['check_in']
+            segment_check_out = segment['check_out']
+            segment_duration = (segment_check_out - segment_check_in).days
+            
+            if room_number in room_details:
+                base_price_per_night = room_details[room_number]["public_price"]
+                segment_price = base_price_per_night * segment_duration
+                total_price += segment_price
+    else: # Single room booking, rooms is a list of room_numbers (strings)
+        if rooms[0] in room_details: # Assuming the first room in the list is the chosen one for pricing
+            base_price_per_night = room_details[rooms[0]]["public_price"]
+            total_price = base_price_per_night * stay_duration
+
+    # Apply discounts
+    for rule in policies:
+        if stay_duration >= rule["nights"]:
+            total_price *= (1 - rule["percentage"] / 100)
+            break # Apply only the best (first matching) discount
+
+    return total_price
+
 def get_all_bookings(bookings_file="bookings.csv"):
     try:
         with open(bookings_file, "r") as f:
@@ -99,9 +134,42 @@ def get_all_bookings(bookings_file="bookings.csv"):
         print(f"Error: The bookings file '{bookings_file}' was not found.")
         return []
 
-def check_availability(check_in, check_out, all_bookings):
-    NUM_ROOMS = 25
-    ALL_ROOMS = {str(i) for i in range(1, NUM_ROOMS + 1)}
+def get_room_details(additional_info_file="additionalInfo.csv"):
+    room_details = {}
+    try:
+        with open(additional_info_file, "r", encoding="utf-8") as f:
+            reader = csv.reader(f)
+            # Skip initial non-data rows
+            for _ in range(4): # Skip "RIAD ZAHRA", "NUMBER,...", "", and "NUMBER,ROOM NUMBER..." before the actual header
+                next(reader)
+            
+            headers = next(reader) # Read the actual header for room details
+            # Adjust headers to be more programmatic-friendly
+            # Example: NUMBER,ROOM NUMBER,BEDS,CAPACITE TOTALE PAR CHAMBRE,PUBLIC PRICE DIRHAMS,AGENCY RATES DIRHAMS,
+            room_number_idx = headers.index("ROOM NUMBER")
+            beds_idx = headers.index("BEDS")
+            capacity_idx = headers.index("CAPACITE TOTALE PAR CHAMBRE")
+            public_price_idx = headers.index("PUBLIC PRICE DIRHAMS")
+            agency_rates_idx = headers.index("AGENCY RATES DIRHAMS")
+
+            for row in reader:
+                if row and row[room_number_idx].strip().isdigit():  # Ensure it's a room data row
+                    room_number = row[room_number_idx].strip()
+                    room_details[room_number] = {
+                        "beds": row[beds_idx].strip(),
+                        "capacity": int(row[capacity_idx].strip()),
+                        "public_price": float(row[public_price_idx].strip()),
+                        "agency_rates": float(row[agency_rates_idx].strip())
+                    }
+    except FileNotFoundError:
+        print(f"Error: The additional info file '{additional_info_file}' was not found.")
+    except Exception as e:
+        print(f"Error parsing additional info file: {e}")
+    return room_details
+
+
+def check_availability(check_in, check_out, all_bookings, room_details, num_guests=1):
+    ALL_ROOMS = {room_num for room_num, details in room_details.items() if details["capacity"] >= num_guests}
     booked_rooms = set()
     stay_dates = {check_in + timedelta(days=i) for i in range((check_out - check_in).days)}
     for booking in all_bookings:
@@ -112,9 +180,8 @@ def check_availability(check_in, check_out, all_bookings):
             booked_rooms.add(booking["room_number"])
     return sorted(list(ALL_ROOMS - booked_rooms), key=int)
 
-def find_split_stay_options(check_in, check_out, all_bookings):
-    NUM_ROOMS = 25
-    ALL_ROOMS = {str(i) for i in range(1, NUM_ROOMS + 1)}
+def find_split_stay_options(check_in, check_out, all_bookings, room_details, num_guests=1):
+    ALL_ROOMS = {room_num for room_num, details in room_details.items() if details["capacity"] >= num_guests}
     daily_booked_rooms = defaultdict(set)
     for booking in all_bookings:
         current_date = date.fromisoformat(booking["check_in_date"])
@@ -141,6 +208,7 @@ def handle_booking_request(request_text):
     
     parsed_request = llm_parse_booking_request(request_text)
     policies = parse_policies()
+    room_details = get_room_details() # Load room details here
     
     if not parsed_request:
         print("\n[CONCLUSION]\nI'm sorry, I could not understand the dates in your request.")
@@ -149,29 +217,36 @@ def handle_booking_request(request_text):
     guest_name = parsed_request['guest_name']
     check_in = parsed_request['check_in_date']
     check_out = parsed_request['check_out_date']
+    num_guests = parsed_request['num_guests']
     stay_duration = (check_out - check_in).days
     
-    print(f"\n[PARSED]\nGuest: {guest_name}, Check-in: {check_in}, Check-out: {check_out} ({stay_duration} nights)")
+    print(f"\n[PARSED]\nGuest: {guest_name}, Check-in: {check_in}, Check-out: {check_out} ({stay_duration} nights), Guests: {num_guests}")
     
     all_bookings = get_all_bookings()
     if not all_bookings: return
 
-    available_rooms = check_availability(check_in, check_out, all_bookings)
+    # Pass room_details and num_guests to check_availability
+    available_rooms = check_availability(check_in, check_out, all_bookings, room_details, num_guests)
     
     booking_possible = False
+    estimated_price = 0 # Initialize estimated_price
     if available_rooms:
         booking_possible = True
         print(f"\n[CONCLUSION]\nGood news! We have {len(available_rooms)} rooms available for your requested dates.")
         print(f"Available rooms: {', '.join(available_rooms)}")
+        # Assuming we pick the first available room for pricing if multiple are available
+        estimated_price = calculate_price(room_details, [available_rooms[0]], check_in, check_out, policies)
     else:
         print("\n[INFO]\nNo single room is available for the entire duration. Checking for a split-stay option...")
-        split_option = find_split_stay_options(check_in, check_out, all_bookings)
+        # Pass room_details and num_guests to find_split_stay_options
+        split_option = find_split_stay_options(check_in, check_out, all_bookings, room_details, num_guests)
         if split_option and len(split_option) > 1:
             booking_possible = True
             print("\n[CONCLUSION]\nWe can accommodate your request, but it would require a room change.")
             for i, segment in enumerate(split_option):
                 duration = (segment['check_out'] - segment['check_in']).days
                 print(f"  - Part {i+1}: Stay in Room {segment['room']} from {segment['check_in']} to {segment['check_out']} ({duration} night/s)")
+            estimated_price = calculate_price(room_details, split_option, check_in, check_out, policies)
         else:
             print("\n[CONCLUSION]\nSorry, we are fully booked and cannot accommodate your request even with a room change.")
 
@@ -180,6 +255,8 @@ def handle_booking_request(request_text):
             if stay_duration >= rule["nights"]:
                 print(f"\n[POLICY APPLIED]\nThis booking of {stay_duration} nights qualifies for a {rule['percentage']}% discount!")
                 break
+        if estimated_price > 0:
+            print(f"\n[ESTIMATED PRICE]\nTotal estimated price for your stay: {estimated_price:.2f} DIRHAMS")
 
 if __name__ == "__main__":
     

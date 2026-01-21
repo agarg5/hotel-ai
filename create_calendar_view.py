@@ -1,5 +1,7 @@
 import csv
 from datetime import date, timedelta
+from booking_agent import get_room_details
+from booking_agent import get_room_details
 
 def create_calendar_view():
     """
@@ -12,8 +14,9 @@ def create_calendar_view():
     OUTPUT_FILE = "bookings_calendar_view.csv"
     START_DATE = date(2026, 1, 1)
     END_DATE = date(2026, 1, 31)
-    NUM_ROOMS = 25
-    ROOM_NUMBERS = [1 + i for i in range(NUM_ROOMS)]
+    
+    room_details = get_room_details()
+    ALL_ROOM_NUMBERS = sorted([int(rn) for rn in room_details.keys()])
     
     # --- Data Structures ---
     
@@ -23,7 +26,7 @@ def create_calendar_view():
     
     # Initialize the calendar grid
     # calendar[room_number][date_string] = booking_id
-    calendar = {room: {dt: "" for dt in date_strings} for room in ROOM_NUMBERS}
+    calendar = {room: {dt: "" for dt in date_strings} for room in ALL_ROOM_NUMBERS}
 
     # --- Read Bookings and Populate Calendar ---
     try:
@@ -52,7 +55,7 @@ def create_calendar_view():
     with open(OUTPUT_FILE, "w", newline="") as f:
         writer = csv.writer(f)
         writer.writerow(header)
-        for room_number in ROOM_NUMBERS:
+        for room_number in ALL_ROOM_NUMBERS:
             row = [room_number] + [calendar[room_number][dt] for dt in date_strings]
             writer.writerow(row)
 
