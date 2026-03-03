@@ -1,123 +1,114 @@
-# AI Hotel Booking Agent
+# Hotel AI Booking Agent
 
-This project implements a simulated AI hotel booking agent designed to process booking requests, check room availability, suggest split stays, and apply hotel policies. It leverages the OpenAI API for natural language understanding to parse booking requests from various sources like email or messaging platforms.
+An intelligent hotel booking system that processes natural-language requests, checks room availability across 25 rooms, suggests split stays when needed, and applies dynamic pricing policies — all powered by OpenAI's language models.
 
-## Project Overview
+**Try it live:** https://hotel-ai-booking-production.up.railway.app
 
-The core of the project is `booking_agent.py`, which orchestrates the booking process. It interacts with:
--   `bookings.csv`: A CSV file simulating the hotel's existing reservations for 25 rooms.
--   `hotel_policy.txt`: A plain text file defining hotel rules, such as discount policies for long stays.
--   OpenAI API: Used for advanced natural language processing to understand diverse date formats and languages in booking requests.
+## What It Does
 
-Key features include:
--   **Booking Data Management:** `bookings.csv` stores reservation details, and `bookings_calendar_view.csv` provides a visual, calendar-like overview of room occupancy.
--   **Flexible Room Numbering:** Rooms are numbered 1 through 25 for simplicity.
--   **Split-Stay Suggestions:** If a single room isn't available for the entire duration of a request, the agent attempts to find a solution by suggesting a room change during the stay.
--   **Multilingual Natural Language Understanding:** Utilizes the OpenAI API to extract check-in and check-out dates from free-form text requests, supporting multiple languages and relative date expressions.
--   **Policy Application:** Reads and applies rules defined in `hotel_policy.txt`, such as offering discounts for extended stays.
+A guest writes something like *"Book a room for John Smith, 2 guests, checking in June 10 and checking out June 14"* and the system:
 
-## Building and Running
+1. **Parses the request** using OpenAI — handles multiple languages, relative dates ("tomorrow for 3 nights"), and varied formats
+2. **Checks availability** against the hotel's 25-room inventory
+3. **Suggests split stays** if no single room covers the full stay (e.g., Room 5 for 2 nights then Room 12 for 2 nights)
+4. **Applies discount policies** defined in `hotel_policy.txt` (e.g., 10% off for stays >= 7 nights)
+5. **Returns a structured result** with available rooms, pricing, and any applicable discounts
 
-This project uses Python and requires an OpenAI API key. It is recommended to use a Python virtual environment to manage dependencies.
+## Architecture
 
-### Setup
-
-1.  **Create a Virtual Environment (if not already done):**
-    ```bash
-    python3 -m venv venv
-    ```
-
-2.  **Activate the Virtual Environment:**
-    *   **macOS/Linux:**
-        ```bash
-        source venv/bin/activate
-        ```
-    *   **Windows (Command Prompt):S
-        ```bash
-        venv\Scripts\activate.bat
-        ```
-    *   **Windows (PowerShell):**
-        ```bash
-        venv\Scripts\Activate.ps1
-        ```
-
-3.  **Install Dependencies:**
-    ```bash
-    pip install -r requirements.txt
-    ```
-    (Note: `requirements.txt` should contain `openai` and `python-dotenv`.)
-
-4.  **Configure OpenAI API Key:**
-    Create a file named `.env` in the root directory of the project and add your OpenAI API key to it:
-    ```
-    OPENAI_API_KEY='your_openai_api_key_here'
-    ```
-    Replace `'your_openai_api_key_here'` with your actual key. This file is ignored by Git (`.gitignore`) for security.
-
-### Data Generation (Optional)
-
-The project includes scripts to generate simulated booking data:
-
--   **`create_bookings_csv.py`:** Generates `bookings.csv` with simulated reservations.
-    ```bash
-    python3 create_bookings_csv.py
-    ```
--   **`create_calendar_view.py`:** Generates `bookings_calendar_view.csv`, a calendar-style view of the bookings.
-    ```bash
-    python3 create_calendar_view.py
-    ```
-
-### Running the Agent
-
-With the virtual environment activated and the `.env` file configured, run the main booking agent:
-
-```bash
-python3 booking_agent.py
+```
+┌─────────────────────────────────┐
+│   React Frontend (Vite SPA)     │  ← Natural language input form
+├─────────────────────────────────┤
+│   FastAPI Server                │  ← REST API + static file serving
+├─────────────────────────────────┤
+│   Booking Agent (Python)        │  ← Availability, split-stay, pricing logic
+├─────────────────────────────────┤
+│   OpenAI API                    │  ← NLU for date/intent extraction
+├─────────────────────────────────┤
+│   CSV Data Store                │  ← bookings.csv, hotel_policy.txt
+└─────────────────────────────────┘
 ```
 
-This will execute several predefined test cases demonstrating its functionality.
+**Key design decisions:**
+- Single service deployment — React frontend is built at deploy time and served by FastAPI via `StaticFiles`, keeping infrastructure simple
+- No database — CSV files simulate the hotel's booking system, making the project self-contained and easy to demo
+- LLM-powered parsing — instead of rigid date formats, guests can write naturally in any language
 
-## API Deployment
+## Tech Stack
 
-The booking agent is deployed as a FastAPI web service on Railway.
+| Layer | Technology |
+|-------|-----------|
+| Frontend | React 19, Vite |
+| Backend | FastAPI, Python 3 |
+| NLU | OpenAI API (GPT) |
+| Deployment | Railway (Nixpacks: Python + Node) |
 
-**Live URL:** https://hotel-ai-booking-production.up.railway.app
-
-### Endpoints
+## API
 
 | Method | Path | Description |
 |--------|------|-------------|
-| `GET` | `/` | API info and available endpoints |
-| `GET` | `/health` | Health check — returns `{"status": "ok"}` |
-| `POST` | `/booking` | Process a natural-language booking request |
+| `GET` | `/health` | Health check |
+| `POST` | `/booking` | Process a booking request |
 
-### Example Request
+### Example
 
 ```bash
 curl -X POST https://hotel-ai-booking-production.up.railway.app/booking \
   -H "Content-Type: application/json" \
-  -d '{"request_text": "Hi, my name is Alex. I'd like to book a room for tomorrow for 3 nights."}'
+  -d '{"request_text": "Hi, my name is Alex. I would like to book a room for tomorrow for 3 nights."}'
 ```
 
-### Running Locally
+Response:
+```json
+{
+  "guest_name": "Alex",
+  "check_in": "2025-06-11",
+  "check_out": "2025-06-14",
+  "num_guests": 1,
+  "stay_nights": 3,
+  "booking_possible": true,
+  "available_rooms": ["Room 1", "Room 2", "Room 5"],
+  "split_stay": null,
+  "estimated_price": 450,
+  "discount_applied": null
+}
+```
+
+## Running Locally
 
 ```bash
+# Backend
+python3 -m venv venv && source venv/bin/activate
+pip install -r requirements.txt
+echo 'OPENAI_API_KEY=your_key_here' > .env
 uvicorn main:app --reload
+
+# Frontend (dev mode with hot reload)
+cd frontend && npm install && npm run dev
 ```
 
-### Deploying to Railway
+## Deployment
 
-1. Connect the repo to a Railway project
-2. Set the `OPENAI_API_KEY` environment variable in the Railway dashboard
-3. Railway auto-deploys on push to `main`
+The app auto-deploys to Railway on push to `main`. Railway's Nixpacks builder handles both Python and Node:
 
-## Demos
-For a non-technical demonstration of how the AI Hotel Booking Agent can be used and what to expect, please refer to the [DEMO.md](DEMO.md) file.
+1. **Build phase:** `cd frontend && npm ci && npm run build` → outputs to `static/`
+2. **Start phase:** `uvicorn main:app --host 0.0.0.0 --port $PORT`
 
-## Development Conventions
+Only requirement: set `OPENAI_API_KEY` in the Railway dashboard.
 
--   **Language:** Python 3.x
--   **Data Storage:** Booking data is managed in CSV files (`bookings.csv`). Hotel policies are stored in a plain text file (`hotel_policy.txt`).
--   **Dependencies:** Managed via `requirements.txt` and Python virtual environments.
--   **Natural Language Processing:** Leverages the OpenAI API for date and intent extraction.
--   **Code Structure:** Functions are organized within `booking_agent.py` for parsing requests, checking availability, finding split-stay options, and applying policies.
+## Project Structure
+
+```
+├── main.py                  # FastAPI server + static file serving
+├── booking_agent.py         # Core booking logic (availability, split-stay, pricing)
+├── bookings.csv             # Simulated hotel reservation data (25 rooms)
+├── hotel_policy.txt         # Discount rules and hotel policies
+├── frontend/                # React SPA (Vite)
+│   ├── src/
+│   │   ├── App.jsx          # Main app with booking form and results
+│   │   └── components/      # BookingForm, BookingResult, SplitStayCard
+│   └── vite.config.js       # Build output → ../static/, dev proxy
+├── nixpacks.toml            # Python + Node providers for Railway
+└── railway.toml             # Build and start commands
+```
