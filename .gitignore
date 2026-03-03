@@ -2,3 +2,7 @@
 .env
 venv
 .worktrees/
+
+# Frontend build output & deps
+/static/
+/frontend/node_modules/
