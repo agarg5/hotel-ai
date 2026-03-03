@@ -77,6 +77,40 @@ python3 booking_agent.py
 
 This will execute several predefined test cases demonstrating its functionality.
 
+## API Deployment
+
+The booking agent is deployed as a FastAPI web service on Railway.
+
+**Live URL:** https://hotel-ai-booking-production.up.railway.app
+
+### Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/` | API info and available endpoints |
+| `GET` | `/health` | Health check — returns `{"status": "ok"}` |
+| `POST` | `/booking` | Process a natural-language booking request |
+
+### Example Request
+
+```bash
+curl -X POST https://hotel-ai-booking-production.up.railway.app/booking \
+  -H "Content-Type: application/json" \
+  -d '{"request_text": "Hi, my name is Alex. I'd like to book a room for tomorrow for 3 nights."}'
+```
+
+### Running Locally
+
+```bash
+uvicorn main:app --reload
+```
+
+### Deploying to Railway
+
+1. Connect the repo to a Railway project
+2. Set the `OPENAI_API_KEY` environment variable in the Railway dashboard
+3. Railway auto-deploys on push to `main`
+
 ## Demos
 For a non-technical demonstration of how the AI Hotel Booking Agent can be used and what to expect, please refer to the [DEMO.md](DEMO.md) file.
 
