@@ -1,4 +1,7 @@
+import os
+
 from fastapi import FastAPI, HTTPException
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from booking_agent import (
     llm_parse_booking_request,
@@ -12,20 +15,11 @@ from booking_agent import (
 
 app = FastAPI(title="Hotel AI Booking Agent")
 
+STATIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
+
 
 class BookingRequest(BaseModel):
     request_text: str
-
-
-@app.get("/")
-def root():
-    return {
-        "service": "Hotel AI Booking Agent",
-        "endpoints": {
-            "POST /booking": "Process a natural-language booking request",
-            "GET /health": "Health check",
-        },
-    }
 
 
 @app.get("/health")
@@ -105,3 +99,8 @@ def booking(req: BookingRequest):
                 break
 
     return result
+
+
+# Serve React frontend (must be after API routes)
+if os.path.exists(STATIC_DIR):
+    app.mount("/", StaticFiles(directory=STATIC_DIR, html=True), name="static")
